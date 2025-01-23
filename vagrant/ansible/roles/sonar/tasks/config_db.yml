@@ -1,0 +1,79 @@
+- name: Load secrets
+  ansible.builtin.include_vars:
+    file: secrets.yml
+
+- name: Find pg_hba.conf
+  ansible.builtin.find:
+    paths: /etc/postgresql/
+    patterns: pg_hba.conf
+    recurse: true
+  register: pg_hba
+
+- name: Create pg_hba backup
+  ansible.builtin.copy:
+    src: "{{ pg_hba.files[0]['path'] }}"
+    dest: "{{ pg_hba.files[0]['path'] }}.bak"
+    remote_src: true
+
+- name: Temporarly change pg_hba file
+  ansible.builtin.lineinfile:
+    path: "{{ pg_hba.files[0]['path'] }}"
+    regexp: '^local\s+all\s+postgres\s+\w+'
+    line: 'local  all     postgres    trust'
+    state: present
+
+- name: restart pg
+  ansible.builtin.systemd_service:
+    state: restarted
+    name: postgresql
+
+- name: Change postgres password in databaase
+  community.postgresql.postgresql_user:
+    name: postgres
+    password: "{{ pg_pass }}"
+    state: present
+    login_user: postgres
+    login_password: ""
+
+- name: Restore pg_hba
+  ansible.builtin.copy:
+    src: "{{ pg_hba.files[0]['path'] }}.bak"
+    dest: "{{ pg_hba.files[0]['path'] }}"
+    owner: postgres
+    group: postgres
+    mode: 0640
+    remote_src: true
+
+- name: Delete pg_hba backup file
+  ansible.builtin.file:
+    path: "{{ pg_hba.files[0]['path'] }}.bak"
+    state: absent
+
+- name: restart pg
+  ansible.builtin.systemd_service:
+    state: restarted
+    name: postgresql
+
+- name: Create user in postgres
+  community.postgresql.postgresql_user:
+    name: "{{ user[\"name\"] }}"
+    password: "{{ pg_user_pass }}"
+    login_password: "{{ pg_pass }}"
+    login_host: localhost
+
+- name: Create db in postgres
+  community.postgresql.postgresql_db:
+    owner: "{{ user[\"name\"] }}"
+    name: "{{ pg_db }}"
+    login_password: "{{ pg_pass }}"
+    login_host: localhost
+
+- name: Grant privileges
+  community.postgresql.postgresql_privs:
+    database: "{{ pg_db }}"
+    roles: "{{ user[\"name\"] }}"
+    privs: ALL
+    type: database
+    login_password: "{{ pg_pass }}"
+    login_host: localhost
+  notify: restart pg

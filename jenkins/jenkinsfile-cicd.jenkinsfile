@@ -1,0 +1,94 @@
+pipeline {
+  agent any
+
+  environment {
+    region = 'us-east-2'
+    creds = 'aws_creds'
+    registryCredential = "ecr:${region}:${creds}"
+    appRegistry = '905418464140.dkr.ecr.us-east-2.amazonaws.com/vprofileappimg'
+    vprofileRegistry = 'https://905418464140.dkr.ecr.us-east-2.amazonaws.com'
+    cluster = 'vprofile'
+    service = 'vproappsvc'
+  }
+
+  stages {
+    stage('Fetch code') {
+      steps {
+        git branch: 'docker', url: 'https://github.com/devopshydclub/vprofile-project.git'
+      }
+    }
+
+    stage('Test') {
+      steps {
+        sh 'mvn test'
+      }
+    }
+
+    stage('Code Analysis with checkstyle') {
+      steps {
+        sh 'mvn checkstyle:checkstyle'
+      }
+      post {
+        success {
+          echo 'Generated Analysis Result'
+        }
+      }
+    }
+
+    stage('build && SonarQube analysis') {
+      environment {
+        scannerHome = tool 'Sonar_6.2'
+      }
+
+      steps {
+        withSonarQubeEnv('Sonarqube_Server') {
+          sh '''$scannerHome/bin/sonar-scanner -Dsonar.projectKey=vprofile \
+            -Dsonar.projectName=vprofile-repo \
+            -Dsonar.projectVersion=1.$BUILD_NUMBER \
+            -Dsonar.sources=src/ \
+            -Dsonar.java.binaries=target/test-classes/com/visualpathit/account \
+            -Dsonar.junit.reportsPath=target/surefire-reports/ \
+            -Dsonar.jacoco.reportsPath=target/jacoco.exec \
+            -Dsonar.java.libreries= \
+            -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
+          '''
+        }
+      }
+    }
+
+    stage('Quality Gate') {
+      steps {
+        timeout(1) {
+          waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+
+    stage('Build App Image') {
+      steps {
+        script {
+          dockerImage = docker.build( appRegistry + ":$BUILD_NUMBER", './Docker-files/app/multistage/')
+        }
+      }
+    }
+
+    stage('Upload App Image') {
+      steps {
+        script {
+          docker.withRegistry(vprofileRegistry, registryCredential) {
+            dockerImage.push("$BUILD_NUMBER")
+            dockerImage.push('latest')
+          }
+        }
+      }
+    }
+
+    stage('Deploy to ECS') {
+      steps {
+        withAWS(credentials: creds, region: region) {
+          sh 'aws ecs update-service --cluster $cluster --service $service --force-new-deployment'
+        }
+      }
+    }
+  }
+}

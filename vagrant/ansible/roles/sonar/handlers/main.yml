@@ -1,0 +1,26 @@
+- name: restart nginx
+  ansible.builtin.systemd_service:
+    enabled: true
+    state: restarted
+    name: nginx
+
+- name: start pg
+  ansible.builtin.systemd_service:
+    enabled: true
+    state: started
+    name: postgresql
+
+- name: restart pg
+  ansible.builtin.systemd_service:
+    state: restarted
+    name: postgresql
+
+- name: start sonar
+  ansible.builtin.systemd_service:
+    enabled: true
+    daemon_reload: true
+    state: restarted
+    name: sonarqube
+
+- name: sysctl apply
+  ansible.builtin.command: sysctl --system

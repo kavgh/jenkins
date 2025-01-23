@@ -1,0 +1,38 @@
+port: 9000
+pg_asc_path: /usr/share/keyrings/pgdg.asc
+pg_url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+config_files:
+  - src: 10-sonarlimits.conf
+    dest: /etc/security/limits.d/10-sonarlimits.conf
+  - src: 10-sonarsysctl.conf
+    dest: /etc/sysctl.d/10-sonarsysctl.conf
+dependencies:
+  - openjdk-17-jdk
+  - postgresql-15
+  - nginx
+  - unzip
+  - pip
+user:
+  name: "sonar"
+  home: "/opt/sonarqube/"
+  comment: "SonarQube - User"
+sonar_url: https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-10.6.0.92116.zip
+config_sonar:
+  - regexp: '^#sonar\.jdbc\.username.*$'
+    line: 'sonar.jdbc.username=sonar'
+  - regexp: '^#sonar\.jdbc\.password.*$'
+    line: 'sonar.jdbc.password={{ pg_user_pass }}'
+  - regexp: '^#sonar\.jdbc\.url.*$'
+    line: 'sonar.jdbc.url=jdbc:postgresql://localhost/{{ pg_db }}'
+  - regexp: '^#sonar\.web\.host.*$'
+    line: 'sonar.web.host=0.0.0.0'
+  - regexp: '^#sonar\.web\.port.*$'
+    line: "sonar.web.port={{ port }}"
+  - regexp: '^#sonar\.web\.javaAdditionalOpts.*'
+    line: 'sonar.web.javaAdditionalOpts=-server'
+  - regexp: '^#sonar\.search\.javaOpts.*$'
+    line: 'sonar.search.javaOpts=-Xmx512m -Xms512m -XX:+HeapDumpOnOutOfMemoryError'
+  - regexp: '^#sonar\.log\.level.*'
+    line: 'sonar.log.level=INFO'
+  - regexp: '^#sonar\.path\.logs.*'
+    line: 'sonar.path.logs=logs'

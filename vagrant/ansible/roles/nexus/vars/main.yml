@@ -1,0 +1,4 @@
+jdk: java-17-openjdk-devel.x86_64
+name: nexus
+nexus_dir: /opt/nexus/
+download_nexus: https://download.sonatype.com/nexus/3/latest-unix.tar.gz

@@ -1,0 +1,42 @@
+- name: Nexus executable file
+  ansible.builtin.find:
+    recurse: true
+    depth: 3
+    paths: "{{ nexus_dir }}"
+    patterns: "{{ name }}(\\.rc)?$"
+    use_regex: true
+  register: file
+
+- name: Config .rc file
+  ansible.builtin.lineinfile:
+    line: "run_as_user=\"{{ name }}\""
+    path: "{{ file.files[1]['path'] }}"
+    regexp: "run_as_user=.*"
+
+- name: Configure service
+  ansible.builtin.template:
+    src: "{{ name }}.service.j2"
+    dest: "/etc/systemd/system/{{ name }}.service"
+
+- name: Start service
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: "{{ name }}.service"
+    state: started
+
+- name: Locate admin password
+  ansible.builtin.find:
+    recurse: true
+    paths: "{{ nexus_dir }}"
+    patterns: admin.password
+  register: initial_password
+
+- name: slurp
+  ansible.builtin.slurp:
+    src: "{{ initial_password.files[0]['path'] }}"
+  register: slurp
+
+- name: Print initial admin password
+  ansible.builtin.debug:
+    msg: "{{ slurp['content'] | b64decode }}"

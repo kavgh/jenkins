@@ -1,0 +1,55 @@
+- name: Add group
+  ansible.builtin.group:
+    name: "{{ user['name'] }}"
+    system: true
+
+- name: Add user
+  ansible.builtin.user:
+    name: "{{ user['name'] }}"
+    group: "{{ user['name'] }}"
+    home: "{{ user['home'] }}"
+    comment: "{{ user['comment'] }}"
+    system: true
+
+- name: Download signing key for postgresql
+  ansible.builtin.get_url:
+    url: "{{ pg_url }}"
+    dest: "{{ pg_asc_path }}"
+
+- name: Create the repository configuration file for postgresql
+  ansible.builtin.template:
+    src: pgdg.list.j2
+    dest: /etc/apt/sources.list.d/pgdg.list
+
+- name: Send config files
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop: "{{ config_files }}"
+  notify: sysctl apply
+
+- name: Install dependencies
+  ansible.builtin.apt:
+    name: "{{ dependencies }}"
+    update_cache: true
+
+- name: Install postgres dependencies
+  ansible.builtin.pip:
+    name: psycopg2-binary
+  notify: start pg
+
+- name: Unarchive sonarqube zip file
+  ansible.builtin.unarchive:
+    owner: "{{ user['name'] }}"
+    group: "{{ user['name'] }}"
+    remote_src: true
+    src: "{{ sonar_url }}"
+    dest: "{{ user['home'] }}"
+
+- name: Find sonar files
+  ansible.builtin.find:
+    recurse: true
+    use_regex: true
+    paths: "{{ user['home'] }}"
+    patterns: "sonar\\.(properties|sh)$"
+  register: file

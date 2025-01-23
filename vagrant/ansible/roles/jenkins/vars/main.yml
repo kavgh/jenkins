@@ -1,0 +1,9 @@
+dependencies:
+  - openjdk-11-jdk
+  - maven
+  - wget
+  - unzip
+  - jenkins
+asc: /usr/share/keyrings/jenkins-keyring.asc
+url_dir: https://pkg.jenkins.io/debian-stable
+url_asc: "{{ url_dir }}/jenkins.io-2023.key"

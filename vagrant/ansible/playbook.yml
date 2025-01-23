@@ -1,0 +1,11 @@
+- hosts: jenkins
+  roles:
+    - {role: jenkins, become: true}
+
+- hosts: nexus
+  roles:
+    - {role: nexus, become: true}
+
+- hosts: sonar
+  roles:
+    - {role: sonar, become: true}

@@ -1,0 +1,13 @@
+- name: Configure sonarqube
+  ansible.builtin.lineinfile:
+    path: "{{ file.files[2]['path'] }}"
+    line: "{{ item.line }}"
+    regexp: "{{ item.regexp }}"
+  loop: "{{ config_sonar }}"
+  no_log: true
+
+- name: Create sonarqube service
+  ansible.builtin.template:
+    src: sonarqube.service.j2
+    dest: /etc/systemd/system/sonarqube.service
+  notify: start sonar

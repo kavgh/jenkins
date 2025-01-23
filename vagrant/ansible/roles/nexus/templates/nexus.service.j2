@@ -1,0 +1,14 @@
+[Unit]                                                                          
+Description={{ name }} service
+After=network.target
+
+[Service]
+Type=forking
+LimitNOFILE=65536
+ExecStart={{ file.files[0]["path"] }} start
+ExecStop={{ file.files[0]["path"] }} stop
+User={{ name }}
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target

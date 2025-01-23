@@ -1,0 +1,16 @@
+- name: Remove default enabled site from nginx
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Configure nginx
+  ansible.builtin.template:
+    src: sonarqube.j2
+    dest: /etc/nginx/sites-available/sonarqube
+
+- name: Enabling sonarqube web site on nginx
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/sonarqube
+    src: /etc/nginx/sites-available/sonarqube
+    state: link
+  notify: restart nginx

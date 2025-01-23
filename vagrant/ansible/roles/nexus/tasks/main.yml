@@ -1,0 +1,7 @@
+- name: dependencies
+  ansible.builtin.import_tasks:
+    file: dependencies.yml
+
+- name: config
+  ansible.builtin.import_tasks:
+    file: configuration.yml

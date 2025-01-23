@@ -1,0 +1,23 @@
+- name: Download jenkins keyring
+  ansible.builtin.get_url:
+    dest: "{{ asc }}"
+    url: "{{ url_asc }}"
+
+- name: Config jenkins apt source
+  ansible.builtin.template:
+    src: jenkins.list.j2
+    dest: /etc/apt/sources.list.d/jenkins.list
+
+- name: Install Dependencies
+  ansible.builtin.apt:
+    name: "{{ dependencies }}"
+    update_cache: true
+
+- name: initialAdminPassword
+  ansible.builtin.slurp:
+    src: /var/lib/jenkins/secrets/initialAdminPassword
+  register: slurp
+
+- name: debug
+  ansible.builtin.debug:
+    msg: "{{ slurp['content'] | b64decode }}"

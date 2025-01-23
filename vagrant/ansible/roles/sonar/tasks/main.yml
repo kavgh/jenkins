@@ -1,0 +1,15 @@
+- name: dependencies.yml
+  ansible.builtin.import_tasks:
+    file: dependencies.yml
+
+- name: config_db.yml
+  ansible.builtin.import_tasks:
+    file: config_db.yml
+
+- name: config_sonar.yml
+  ansible.builtin.import_tasks:
+    file: config_sonar.yml
+
+- name: config_nginx.yml
+  ansible.builtin.import_tasks:
+    file: config_nginx.yml

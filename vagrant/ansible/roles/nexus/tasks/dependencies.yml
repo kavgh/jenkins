@@ -1,0 +1,30 @@
+- name: Install jdk
+  ansible.builtin.dnf:
+    name: "{{ jdk }}"
+
+- name: Create group
+  ansible.builtin.group:
+    name: "{{ name }}"
+    system: yes
+
+- name: Create user
+  ansible.builtin.user:
+    name: "{{ name }}"
+    group: "{{ name }}"
+    home: "{{ nexus_dir }}"
+    system: true
+
+- name: Download and unarchive file
+  ansible.builtin.unarchive:
+    owner: "{{ name }}"
+    group: "{{ name }}"
+    src: "{{ download_nexus }}"
+    dest: "{{ nexus_dir }}"
+    remote_src: yes
+
+- name: Set right owner and group
+  ansible.builtin.file:
+    owner: "{{ name }}"
+    group: "{{ name }}"
+    recurse: true
+    path: "{{ nexus_dir }}"

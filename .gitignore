@@ -1,0 +1,12 @@
+jenkins/Jenkinsfile-code-analisys
+jenkins/Jenkinsfile-declarative
+jenkins/jenkinsfile-quality_gates
+jenkins/Jenkinsfile-scripted
+jenkins/triggers
+terraform/*.tfstate*
+terraform/CICD_Setup/*.tfstate*
+terraform/CICD_Setup/.terraform*
+terraform/CICD_Setup/container_service
+terraform/CICD_Setup/registry
+terraform/CICD_Setup/apply.sh
+vagrant/ansible/.vscode
